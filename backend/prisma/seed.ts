@@ -6,10 +6,26 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { hoyEnLima } from "../src/common/fechas";
 import { PrismaClient } from "../src/generated/prisma/client";
 
+// El seed BORRA todas las tablas antes de cargar los datos de prueba.
+// Por seguridad solo corre contra una base local: nunca contra la de un negocio real.
+function exigirBaseLocal(url: string | undefined): string {
+  if (!url) {
+    throw new Error("Falta DATABASE_URL en el archivo .env");
+  }
+  const host = new URL(url).hostname;
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(host)) {
+    throw new Error(
+      `El seed borra todos los datos y solo puede correr en localhost. DATABASE_URL apunta a "${host}".`,
+    );
+  }
+  return url;
+}
+
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
+  adapter: new PrismaPg({ connectionString: exigirBaseLocal(process.env.DATABASE_URL) }),
 });
 
 // [nombre, laboratorio, presentación, precio de venta (S/), stock mínimo]
@@ -81,8 +97,7 @@ function ean13(n: number): string {
 }
 
 function enDias(dias: number): Date {
-  const d = new Date();
-  d.setUTCHours(0, 0, 0, 0);
+  const d = hoyEnLima();
   d.setUTCDate(d.getUTCDate() + dias);
   return d;
 }
