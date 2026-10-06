@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "./auth/auth.module";
+import { ImportacionModule } from "./importacion/importacion.module";
 import { LotesModule } from "./lotes/lotes.module";
 import { PanelModule } from "./panel/panel.module";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -16,6 +17,7 @@ import { VentasModule } from "./ventas/ventas.module";
     LotesModule,
     VentasModule,
     PanelModule,
+    ImportacionModule,
   ],
 })
 export class AppModule {}
