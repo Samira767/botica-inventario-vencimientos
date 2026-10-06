@@ -1,0 +1,248 @@
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
+import { api, mensajeDe } from '../api'
+import { soles } from '../formato'
+import { useSesion } from '../sesion.tsx'
+import type { Producto } from '../tipos'
+
+const Escaner = lazy(() => import('../componentes/Escaner.tsx'))
+
+const VACIO = { nombre: '', laboratorio: '', presentacion: '', codigoBarras: '', precioVenta: '', stockMinimo: '0' }
+type Campos = typeof VACIO
+
+// Formulario para crear o editar. `producto` es null cuando se crea uno nuevo.
+function Formulario({
+  producto,
+  alGuardar,
+  alCancelar,
+}: {
+  producto: Producto | null
+  alGuardar: () => void
+  alCancelar: () => void
+}) {
+  const [campos, setCampos] = useState<Campos>(
+    producto
+      ? {
+          nombre: producto.nombre,
+          laboratorio: producto.laboratorio ?? '',
+          presentacion: producto.presentacion ?? '',
+          codigoBarras: producto.codigoBarras ?? '',
+          precioVenta: producto.precioVenta,
+          stockMinimo: String(producto.stockMinimo),
+        }
+      : VACIO,
+  )
+  const [escaneando, setEscaneando] = useState(false)
+  const [error, setError] = useState('')
+  const [enviando, setEnviando] = useState(false)
+
+  const cambiar = (campo: keyof Campos) => (e: { target: { value: string } }) =>
+    setCampos({ ...campos, [campo]: e.target.value })
+
+  async function alEnviar(evento: FormEvent) {
+    evento.preventDefault()
+    setError('')
+    setEnviando(true)
+    // Un campo opcional vacío se envía como null: así también se puede borrar al editar
+    const cuerpo = {
+      nombre: campos.nombre.trim(),
+      laboratorio: campos.laboratorio.trim() || null,
+      presentacion: campos.presentacion.trim() || null,
+      codigoBarras: campos.codigoBarras.trim() || null,
+      precioVenta: Number(campos.precioVenta),
+      stockMinimo: Number(campos.stockMinimo),
+    }
+    try {
+      if (producto) await api(`/productos/${producto.id}`, { metodo: 'PATCH', cuerpo })
+      else await api('/productos', { metodo: 'POST', cuerpo })
+      alGuardar()
+    } catch (e) {
+      setError(mensajeDe(e))
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <form className="tarjeta" onSubmit={alEnviar}>
+      <h2>{producto ? 'Editar producto' : 'Nuevo producto'}</h2>
+      <label>
+        Nombre
+        <input required maxLength={150} value={campos.nombre} onChange={cambiar('nombre')} placeholder="Paracetamol 500 mg" />
+      </label>
+      <div className="dos-columnas">
+        <label>
+          Laboratorio
+          <input maxLength={100} value={campos.laboratorio} onChange={cambiar('laboratorio')} />
+        </label>
+        <label>
+          Presentación
+          <input maxLength={100} value={campos.presentacion} onChange={cambiar('presentacion')} placeholder="Caja x 100 tabletas" />
+        </label>
+      </div>
+      <label>
+        Código de barras
+        <span className="fila">
+          <input
+            inputMode="numeric"
+            pattern="\d{8,14}"
+            title="Entre 8 y 14 dígitos"
+            value={campos.codigoBarras}
+            onChange={cambiar('codigoBarras')}
+          />
+          <button type="button" className="boton secundario" onClick={() => setEscaneando(!escaneando)}>
+            Escanear
+          </button>
+        </span>
+      </label>
+      {escaneando && (
+        <Suspense fallback={<p className="tenue">Abriendo cámara…</p>}>
+        <Escaner
+          alLeer={(codigo) => {
+            setCampos((c) => ({ ...c, codigoBarras: codigo }))
+            setEscaneando(false)
+          }}
+          alCerrar={() => setEscaneando(false)}
+        />
+        </Suspense>
+      )}
+      <div className="dos-columnas">
+        <label>
+          Precio de venta (S/)
+          <input
+            type="number"
+            required
+            min="0.01"
+            step="0.01"
+            inputMode="decimal"
+            value={campos.precioVenta}
+            onChange={cambiar('precioVenta')}
+          />
+        </label>
+        <label>
+          Stock mínimo
+          <input
+            type="number"
+            required
+            min={0}
+            step={1}
+            inputMode="numeric"
+            value={campos.stockMinimo}
+            onChange={cambiar('stockMinimo')}
+          />
+        </label>
+      </div>
+
+      {error && <p className="aviso error">{error}</p>}
+      <div className="fila">
+        <button className="boton" disabled={enviando}>
+          {enviando ? 'Guardando…' : 'Guardar'}
+        </button>
+        <button type="button" className="boton secundario" onClick={alCancelar}>
+          Cancelar
+        </button>
+      </div>
+    </form>
+  )
+}
+
+export default function Productos() {
+  const { sesion } = useSesion()
+  const esDueno = sesion?.usuario.rol === 'DUENO'
+  const [buscar, setBuscar] = useState('')
+  const [productos, setProductos] = useState<Producto[] | null>(null)
+  const [error, setError] = useState('')
+  // undefined: formulario cerrado; null: creando; Producto: editando ese
+  const [editando, setEditando] = useState<Producto | null | undefined>(undefined)
+
+  const cargar = useCallback(async (texto: string) => {
+    try {
+      setProductos(await api<Producto[]>(`/productos?buscar=${encodeURIComponent(texto.trim())}`))
+      setError('')
+    } catch (e) {
+      setError(mensajeDe(e))
+    }
+  }, [])
+
+  useEffect(() => {
+    const espera = setTimeout(() => cargar(buscar), 250)
+    return () => clearTimeout(espera)
+  }, [buscar, cargar])
+
+  async function desactivar(producto: Producto) {
+    if (!window.confirm(`¿Desactivar "${producto.nombre}"? Dejará de aparecer en ventas e ingresos.`)) return
+    try {
+      await api(`/productos/${producto.id}`, { metodo: 'DELETE' })
+      await cargar(buscar)
+    } catch (e) {
+      setError(mensajeDe(e))
+    }
+  }
+
+  if (editando !== undefined) {
+    return (
+      <Formulario
+        producto={editando}
+        alCancelar={() => setEditando(undefined)}
+        alGuardar={() => {
+          setEditando(undefined)
+          cargar(buscar)
+        }}
+      />
+    )
+  }
+
+  return (
+    <section className="tarjeta">
+      <h2>
+        Productos
+        {esDueno && (
+          <button className="boton chico" onClick={() => setEditando(null)}>
+            Nuevo producto
+          </button>
+        )}
+      </h2>
+      <input
+        type="search"
+        placeholder="Buscar por nombre, laboratorio o código"
+        value={buscar}
+        onChange={(e) => setBuscar(e.target.value)}
+        aria-label="Buscar productos"
+      />
+      {error && <p className="aviso error">{error}</p>}
+
+      {!productos ? (
+        <p className="tenue">Cargando productos…</p>
+      ) : productos.length === 0 ? (
+        <p className="tenue">No se encontraron productos.</p>
+      ) : (
+        <ul className="lista">
+          {productos.map((p) => (
+            <li key={p.id}>
+              <span>
+                <strong>{p.nombre}</strong>
+                <span className="tenue">{[p.presentacion, p.laboratorio, p.codigoBarras].filter(Boolean).join(' · ')}</span>
+                <span>
+                  {soles(p.precioVenta)}
+                  <span className={p.stockBajo ? 'etiqueta rojo' : 'etiqueta'}>
+                    Stock {p.stock}
+                    {p.stockBajo && ` (mínimo ${p.stockMinimo})`}
+                  </span>
+                </span>
+              </span>
+              {esDueno && (
+                <span className="fila">
+                  <button className="boton secundario chico" onClick={() => setEditando(p)}>
+                    Editar
+                  </button>
+                  <button className="boton secundario chico peligro" onClick={() => desactivar(p)}>
+                    Desactivar
+                  </button>
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}

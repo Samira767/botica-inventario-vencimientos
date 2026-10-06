@@ -1,0 +1,628 @@
+/* Estilos de toda la app. Pensados primero para celular; el ancho se limita en pantallas grandes. */
+
+:root {
+  --fondo: #f3f5f4;
+  --superficie: #ffffff;
+  --borde: #d9dfdc;
+  --texto: #17211d;
+  --tenue: #5d6b66;
+  --primario: #0f766e;
+  --primario-oscuro: #0b5a54;
+  --vencido: #7f1d1d;
+  --rojo: #c62828;
+  --ambar: #b45309;
+  --amarillo: #8a6d00;
+  --exito: #166534;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--texto);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--fondo);
+}
+
+h1,
+h2 {
+  margin: 0 0 0.75rem;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 1.4rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+p {
+  margin: 0 0 0.75rem;
+}
+
+.tenue {
+  color: var(--tenue);
+  font-size: 0.875rem;
+}
+
+/* --- Estructura --- */
+
+.marco {
+  min-height: 100dvh;
+  padding-bottom: 4.5rem; /* espacio para el menú fijo en celular */
+}
+
+.encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--primario);
+  color: #fff;
+}
+
+.encabezado div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.encabezado .tenue {
+  color: #cfe9e5;
+}
+
+.menu {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 10;
+  display: flex;
+  background: var(--superficie);
+  border-top: 1px solid var(--borde);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.menu a {
+  flex: 1;
+  padding: 0.9rem 0.25rem;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--tenue);
+  border-top: 3px solid transparent;
+}
+
+.menu a.active {
+  color: var(--primario);
+  border-top-color: var(--primario);
+}
+
+.contenido {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 48rem) {
+  .marco {
+    padding-bottom: 0;
+  }
+
+  .menu {
+    position: static;
+    justify-content: center;
+    border-top: 0;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .menu a {
+    flex: 0 0 auto;
+    padding: 0.8rem 1.5rem;
+    border-top: 0;
+    border-bottom: 3px solid transparent;
+  }
+
+  .menu a.active {
+    border-bottom-color: var(--primario);
+  }
+}
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  min-width: 0;
+}
+
+/* --- Formularios y botones --- */
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.7rem 0.75rem;
+  font: inherit;
+  font-weight: 400;
+  color: var(--texto);
+  background: #fff;
+  border: 1px solid #b9c2be;
+  border-radius: 0.5rem;
+}
+
+input:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #5eb8ae;
+  outline-offset: 1px;
+}
+
+.boton {
+  padding: 0.75rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primario);
+  border: 1px solid var(--primario);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.boton:hover:not(:disabled) {
+  background: var(--primario-oscuro);
+}
+
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.boton.secundario {
+  color: var(--primario);
+  background: #fff;
+  border-color: #b9c2be;
+}
+
+.boton.secundario:hover:not(:disabled) {
+  background: #eef4f2;
+}
+
+.boton.peligro {
+  color: var(--rojo);
+}
+
+.boton.chico {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.encabezado .boton {
+  color: #fff;
+  background: transparent;
+  border-color: #8fcac3;
+}
+
+.enlace {
+  padding: 0;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--primario);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dos-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0 0.75rem;
+}
+
+.aviso {
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.aviso.error {
+  color: #7f1d1d;
+  background: #fde8e8;
+  border: 1px solid #f5b5b5;
+}
+
+.aviso.exito {
+  color: var(--exito);
+  background: #e5f5ea;
+  border: 1px solid #a9d9b8;
+  font-weight: 600;
+}
+
+/* --- Login --- */
+
+.login {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.login .tarjeta {
+  width: 100%;
+  max-width: 24rem;
+  padding: 1.5rem;
+}
+
+.login .boton {
+  width: 100%;
+}
+
+/* --- Listas --- */
+
+.lista,
+.resultados {
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+}
+
+.lista li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.lista li:last-child {
+  border-bottom: 0;
+}
+
+.lista li > span:first-child,
+.resultados button > span:first-child,
+.elegido > span,
+td {
+  min-width: 0;
+}
+
+.lista li > span:first-child,
+.resultados button > span:first-child,
+.elegido > span {
+  display: grid;
+  gap: 0.15rem;
+  flex: 1 1 12rem;
+}
+
+.resultados {
+  border: 1px solid var(--borde);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.resultados button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.75rem;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid var(--borde);
+  cursor: pointer;
+}
+
+.resultados li:last-child button {
+  border-bottom: 0;
+}
+
+.resultados button:hover {
+  background: #eef4f2;
+}
+
+.elegido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #eef4f2;
+  border-radius: 0.5rem;
+}
+
+.etiqueta {
+  display: inline-block;
+  width: fit-content;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--tenue);
+  background: #eceff0;
+  border-radius: 999px;
+}
+
+.lista li > span:first-child > .etiqueta,
+td > .etiqueta {
+  margin-left: 0;
+}
+
+.etiqueta.vencido {
+  color: #fff;
+  background: var(--vencido);
+}
+
+.etiqueta.rojo {
+  color: #fff;
+  background: var(--rojo);
+}
+
+.etiqueta.ambar {
+  color: #fff;
+  background: var(--ambar);
+}
+
+.etiqueta.amarillo {
+  color: #3b2f00;
+  background: #f7dc6f;
+}
+
+.cantidad {
+  width: 5rem;
+  text-align: center;
+}
+
+.total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 1rem 0;
+  font-size: 1.05rem;
+}
+
+.total strong {
+  font-size: 1.6rem;
+}
+
+.total + .boton,
+form > .boton {
+  width: 100%;
+}
+
+/* --- Escáner --- */
+
+.escaner {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.escaner-video {
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: #000;
+}
+
+/* --- Panel --- */
+
+.destacado {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.destacado div {
+  display: grid;
+  gap: 0.15rem;
+  padding: 1rem;
+  color: #fff;
+  background: var(--primario);
+  border-radius: 0.75rem;
+}
+
+.destacado div + div {
+  background: var(--vencido);
+}
+
+.destacado strong {
+  font-size: 1.9rem;
+  line-height: 1.1;
+}
+
+.destacado small {
+  opacity: 0.85;
+}
+
+.tramos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+}
+
+.tramo {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.85rem;
+  font: inherit;
+  text-align: left;
+  color: var(--texto);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-left: 0.4rem solid var(--color);
+  border-radius: 0.75rem;
+  cursor: pointer;
+}
+
+.tramo.vencido {
+  --color: var(--vencido);
+}
+
+.tramo.rojo {
+  --color: var(--rojo);
+}
+
+.tramo.ambar {
+  --color: var(--ambar);
+}
+
+.tramo.amarillo {
+  --color: #e2b600;
+}
+
+.tramo.activo {
+  background: #eef4f2;
+  border-color: var(--color);
+}
+
+.tramo span {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tramo strong {
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.tramo small {
+  color: var(--tenue);
+}
+
+.tabla-envoltura {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  padding: 0.55rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--borde);
+}
+
+th {
+  font-size: 0.78rem;
+  color: var(--tenue);
+  white-space: nowrap;
+}
+
+td > strong,
+td > .tenue {
+  display: block;
+}
+
+td > .etiqueta {
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+td.num > .etiqueta {
+  display: inline-block;
+  margin-top: 0;
+}
+
+/* En celular las tablas se compactan para que todas las columnas quepan sin deslizar */
+@media (max-width: 30rem) {
+  table {
+    font-size: 0.82rem;
+  }
+
+  th,
+  td {
+    padding: 0.5rem 0.25rem;
+  }
+
+  th:first-child,
+  td:first-child {
+    padding-left: 0;
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: 0;
+  }
+}
+
+.solo-movil {
+  display: none;
+}
+
+/* Lotes por vencer en celular: cada fila se vuelve una ficha (nombre arriba, datos debajo) */
+@media (max-width: 30rem) {
+  .solo-movil {
+    display: inline;
+  }
+
+  .tabla-lotes thead {
+    display: none;
+  }
+
+  .tabla-lotes tr {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: start;
+    gap: 0.25rem 0.75rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .tabla-lotes td {
+    padding: 0;
+    border: 0;
+  }
+
+  .tabla-lotes td:first-child {
+    grid-column: 1 / -1;
+  }
+}
