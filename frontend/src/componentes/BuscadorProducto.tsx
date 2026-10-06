@@ -1,5 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { api, ErrorApi, mensajeDe } from '../api'
+import { useSesion } from '../sesion.tsx'
 import type { Producto } from '../tipos'
 
 // La librería de cámara es pesada: se descarga recién cuando alguien toca "Escanear"
@@ -12,6 +14,12 @@ export default function BuscadorProducto({ alElegir }: { alElegir: (producto: Pr
   const [resultados, setResultados] = useState<Producto[]>([])
   const [escaneando, setEscaneando] = useState(false)
   const [error, setError] = useState('')
+  // Código escaneado que no corresponde a ningún producto del negocio
+  const [sinRegistrar, setSinRegistrar] = useState('')
+  const { sesion } = useSesion()
+  const esDueno = sesion?.usuario.rol === 'DUENO'
+  const navegar = useNavigate()
+  const { pathname } = useLocation()
 
   // Espera a que la persona deje de escribir antes de consultar (no una llamada por tecla)
   useEffect(() => {
@@ -38,15 +46,19 @@ export default function BuscadorProducto({ alElegir }: { alElegir: (producto: Pr
     setTexto('')
     setResultados([])
     setError('')
+    setSinRegistrar('')
     alElegir(producto)
   }
 
   async function alLeerCodigo(codigo: string) {
     setEscaneando(false)
+    setError('')
+    setSinRegistrar('')
     try {
       elegir(await api<Producto>(`/productos/codigo/${encodeURIComponent(codigo)}`))
     } catch (e) {
-      setError(e instanceof ErrorApi && e.estado === 404 ? `No hay ningún producto con el código ${codigo}` : mensajeDe(e))
+      if (e instanceof ErrorApi && e.estado === 404) setSinRegistrar(codigo)
+      else setError(mensajeDe(e))
     }
   }
 
@@ -60,6 +72,7 @@ export default function BuscadorProducto({ alElegir }: { alElegir: (producto: Pr
           onChange={(e) => {
             setTexto(e.target.value)
             setError('')
+            setSinRegistrar('')
           }}
           aria-label="Buscar producto"
         />
@@ -74,6 +87,26 @@ export default function BuscadorProducto({ alElegir }: { alElegir: (producto: Pr
         </Suspense>
       )}
       {error && <p className="aviso error">{error}</p>}
+      {sinRegistrar && (
+        <div className="aviso pendiente">
+          <p>
+            El código <strong>{sinRegistrar}</strong> se leyó bien, pero todavía no hay ningún producto registrado con
+            él.
+          </p>
+          {esDueno ? (
+            // Lleva al formulario con el código ya puesto y, al guardar, regresa a esta pantalla
+            <button
+              type="button"
+              className="boton"
+              onClick={() => navegar('/productos', { state: { codigoNuevo: sinRegistrar, volverA: pathname } })}
+            >
+              Registrar producto con este código
+            </button>
+          ) : (
+            <p>Pide al dueño o dueña del negocio que lo registre.</p>
+          )}
+        </div>
+      )}
 
       {visibles.length > 0 && (
         <ul className="resultados">

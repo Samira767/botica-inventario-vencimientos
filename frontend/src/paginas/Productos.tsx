@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { api, mensajeDe } from '../api'
 import { soles } from '../formato'
 import { useSesion } from '../sesion.tsx'
@@ -13,10 +14,13 @@ type Campos = typeof VACIO
 // Formulario para crear o editar. `producto` es null cuando se crea uno nuevo.
 function Formulario({
   producto,
+  codigoInicial,
   alGuardar,
   alCancelar,
 }: {
   producto: Producto | null
+  // Código de barras escaneado en otra pantalla, para un producto nuevo
+  codigoInicial?: string
   alGuardar: () => void
   alCancelar: () => void
 }) {
@@ -30,7 +34,7 @@ function Formulario({
           precioVenta: producto.precioVenta,
           stockMinimo: String(producto.stockMinimo),
         }
-      : VACIO,
+      : { ...VACIO, codigoBarras: codigoInicial ?? '' },
   )
   const [escaneando, setEscaneando] = useState(false)
   const [error, setError] = useState('')
@@ -79,10 +83,12 @@ function Formulario({
           <input maxLength={100} value={campos.presentacion} onChange={cambiar('presentacion')} placeholder="Caja x 100 tabletas" />
         </label>
       </div>
-      <label>
-        Código de barras
+      {/* El botón va fuera de la etiqueta: dentro, un lector de pantalla lo leería como parte del nombre del campo */}
+      <div className="campo">
+        <label htmlFor="codigo-barras">Código de barras</label>
         <span className="fila">
           <input
+            id="codigo-barras"
             inputMode="numeric"
             pattern="\d{8,14}"
             title="Entre 8 y 14 dígitos"
@@ -93,7 +99,7 @@ function Formulario({
             Escanear
           </button>
         </span>
-      </label>
+      </div>
       {escaneando && (
         <Suspense fallback={<p className="tenue">Abriendo cámara…</p>}>
         <Escaner
@@ -152,7 +158,18 @@ export default function Productos() {
   const [productos, setProductos] = useState<Producto[] | null>(null)
   const [error, setError] = useState('')
   // undefined: formulario cerrado; null: creando; Producto: editando ese
-  const [editando, setEditando] = useState<Producto | null | undefined>(undefined)
+  // Si se llega desde un escaneo sin resultado, se abre directo el formulario con ese código
+  const navegar = useNavigate()
+  const origen = useLocation().state as { codigoNuevo?: string; volverA?: string } | null
+  const [editando, setEditando] = useState<Producto | null | undefined>(
+    origen?.codigoNuevo && esDueno ? null : undefined,
+  )
+
+  // Al terminar se regresa a la pantalla desde la que se escaneó (venta o ingreso), si la hubo
+  function cerrarFormulario() {
+    if (origen?.volverA) navegar(origen.volverA)
+    else setEditando(undefined)
+  }
 
   const cargar = useCallback(async (texto: string) => {
     try {
@@ -182,9 +199,10 @@ export default function Productos() {
     return (
       <Formulario
         producto={editando}
-        alCancelar={() => setEditando(undefined)}
+        codigoInicial={editando === null ? origen?.codigoNuevo : undefined}
+        alCancelar={cerrarFormulario}
         alGuardar={() => {
-          setEditando(undefined)
+          cerrarFormulario()
           cargar(buscar)
         }}
       />

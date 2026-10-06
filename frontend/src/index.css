@@ -643,3 +643,24 @@ td.num > .etiqueta {
     grid-column: 1 / -1;
   }
 }
+
+.aviso.pendiente {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0.75rem 0;
+  color: #5c3d00;
+  background: #fff4d6;
+  border: 1px solid #ecd28a;
+}
+
+.aviso.pendiente p {
+  margin: 0;
+}
+
+.campo {
+  margin-bottom: 0.85rem;
+}
+
+.campo label {
+  margin-bottom: 0.3rem;
+}
