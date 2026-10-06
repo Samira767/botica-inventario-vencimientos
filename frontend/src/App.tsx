@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Marco from './componentes/Marco.tsx'
+import Importar from './paginas/Importar.tsx'
 import Ingreso from './paginas/Ingreso.tsx'
 import Login from './paginas/Login.tsx'
 import Panel from './paginas/Panel.tsx'
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/venta" element={<Venta />} />
         <Route path="/ingreso" element={<Ingreso />} />
         <Route path="/productos" element={<Productos />} />
+        {esDueno && <Route path="/productos/importar" element={<Importar />} />}
         <Route path="*" element={<Navigate to={inicio} replace />} />
       </Route>
     </Routes>

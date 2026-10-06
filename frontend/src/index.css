@@ -664,3 +664,67 @@ td.num > .etiqueta {
 .campo label {
   margin-bottom: 0.3rem;
 }
+
+/* --- Importación --- */
+
+a.boton {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+
+.pasos {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+/* El <input type="file"> real se oculta: la etiqueta entera hace de botón */
+.boton.archivo {
+  display: block;
+  margin-bottom: 0.75rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.boton.archivo input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.boton.archivo:focus-within {
+  outline: 3px solid #5eb8ae;
+  outline-offset: 1px;
+}
+
+.tramo.dato {
+  cursor: default;
+  --color: var(--borde);
+  margin-bottom: 0.75rem;
+}
+
+.tramo.dato.verde {
+  --color: var(--exito);
+}
+
+.tramo.dato.rojo {
+  --color: var(--rojo);
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.datos .tramo {
+  padding: 0.6rem;
+}
+
+.datos + .boton,
+.datos ~ button.boton {
+  width: 100%;
+}

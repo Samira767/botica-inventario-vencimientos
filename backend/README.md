@@ -70,6 +70,8 @@ Todas las rutas llevan el prefijo `/api` y, salvo el login, piden el encabezado 
 | `POST /ventas` | Cualquier rol | Registra una venta `{ "items": [{ "productoId": 1, "cantidad": 3 }] }` descontando stock con FEFO |
 | `GET /ventas` | Cualquier rol | Últimas 50 ventas |
 | `GET /ventas/:id` | Cualquier rol | Venta con el detalle de cada lote usado |
+| `POST /importacion/vista-previa` | DUENO | Valida las filas de un Excel de inventario y devuelve el estado de cada una, sin guardar |
+| `POST /importacion/confirmar` | DUENO | Vuelve a validar y guarda productos, lotes y movimientos en una transacción |
 | `GET /panel` | DUENO | Vencimientos (vencidos, 30, 60 y 90 días), dinero en riesgo y productos con stock bajo |
 
 ## Ventas con FEFO
@@ -90,6 +92,16 @@ Las pruebas cubren: venta que usa varios lotes, stock insuficiente, lotes vencid
 - **Vencimientos** por tramo (`VENCIDO`, `DIAS_30`, `DIAS_60`, `DIAS_90`), con número de lotes, unidades y valor.
 - **Dinero en riesgo**: soles, al costo, en lotes con stock que vencen en los próximos 90 días. Lo ya vencido se informa aparte (`dineroVencido`).
 - **Stock bajo**: productos cuyo stock vendible está por debajo de su mínimo. El stock vencido no cuenta.
+
+## Importación desde Excel
+
+El navegador lee el archivo y envía las filas como JSON (una fila por lote, hasta 2000). El servidor nunca recibe el archivo.
+
+- **Dos pasos**: `vista-previa` no guarda nada; `confirmar` repite la validación dentro de la transacción, porque los datos pudieron cambiar y nunca se confía en un resultado enviado por el navegador.
+- **Misma función para ambos** ([src/importacion/analisis.ts](src/importacion/analisis.ts)): lo que se ve en la vista previa es exactamente lo que se guarda.
+- **Errores por fila**: una fila mala no rechaza el archivo; se omite y se informa con su número de fila.
+- **Reimportar no duplica**: un lote que ya existe se omite. Un producto se reconoce por su código de barras o, si no tiene, por nombre y presentación.
+- **Lotes vencidos**: se aceptan con un aviso, porque el inventario inicial puede incluir mercadería vencida sin retirar.
 
 ## Comandos
 

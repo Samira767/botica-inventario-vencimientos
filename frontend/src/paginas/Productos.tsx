@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { api, mensajeDe } from '../api'
 import { soles } from '../formato'
 import { useSesion } from '../sesion.tsx'
@@ -214,9 +214,14 @@ export default function Productos() {
       <h2>
         Productos
         {esDueno && (
-          <button className="boton chico" onClick={() => setEditando(null)}>
-            Nuevo producto
-          </button>
+          <span className="fila">
+            <Link className="boton secundario chico" to="/productos/importar">
+              Importar Excel
+            </Link>
+            <button className="boton chico" onClick={() => setEditando(null)}>
+              Nuevo producto
+            </button>
+          </span>
         )}
       </h2>
       <input

@@ -31,12 +31,14 @@ En desarrollo no hay que configurar nada: Vite reenvía las llamadas a `/api` ha
 | `/venta` | Todos | Arma la venta buscando o escaneando productos; al registrar muestra de qué lote entregar |
 | `/ingreso` | Todos | Registra un lote que llegó: número, vencimiento, cantidad y costo |
 | `/productos` | Todos (editar: dueño) | Catálogo con stock; el dueño crea, edita y desactiva |
+| `/productos/importar` | Dueño | Importa el inventario desde Excel: plantilla, vista previa con errores por fila y confirmación |
 
 ## Estructura
 
 | Archivo | Contenido |
 | --- | --- |
 | [src/api.ts](src/api.ts) | Única función que habla con el backend: agrega el token y convierte los errores |
+| [src/excel.ts](src/excel.ts) | Lee el Excel en el navegador con SheetJS y genera la plantilla |
 | [src/sesion.tsx](src/sesion.tsx) | Quién inició sesión (contexto de React + `localStorage`) |
 | [src/App.tsx](src/App.tsx) | Rutas según el rol |
 | [src/paginas/](src/paginas/) | Una pantalla por archivo |
@@ -45,6 +47,7 @@ En desarrollo no hay que configurar nada: Vite reenvía las llamadas a `/api` ha
 ## Notas
 
 - **Escáner de códigos**: usa la cámara con `barcode-detector`, que lee con ZXing compilado a WebAssembly y analiza cada cuadro a la resolución real de la cámara. Se empezó con `html5-qrcode`, pero esa librería analiza la imagen al tamaño en que se muestra en pantalla y no lograba leer códigos de barras a distancia normal. El código debe ocupar al menos una sexta parte del ancho de la imagen y verse nítido; siempre se puede escribir a mano.
+- **Excel**: SheetJS se instala desde su distribución oficial (`cdn.sheetjs.com`), porque el paquete `xlsx` de npm quedó desactualizado. Las fechas se leen como el número de días que guarda Excel y se convierten sin pasar por zonas horarias, para que no se corran un día.
 - **Permisos**: ocultar un botón o una ruta según el rol es solo comodidad. Quien decide es el backend, que responde 403.
 - **Sesión**: el token se guarda en `localStorage`; si vence o es rechazado, la app vuelve sola al login.
 
