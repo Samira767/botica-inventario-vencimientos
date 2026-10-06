@@ -61,6 +61,7 @@ model Lote {
   numeroLote        String         @map("numero_lote")
   fechaVencimiento  DateTime       @map("fecha_vencimiento") @db.Date
   cantidadInicial   Int            @map("cantidad_inicial")
+  // La base exige cantidad_actual >= 0 (CHECK creado en la migración check_stock_no_negativo)
   cantidadActual    Int            @map("cantidad_actual")
   costoUnitario     Decimal        @map("costo_unitario") @db.Decimal(10, 2)
   fechaIngreso      DateTime       @default(now()) @map("fecha_ingreso")
