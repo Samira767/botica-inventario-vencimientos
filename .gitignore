@@ -1,0 +1,16 @@
+# Dependencias y archivos generados
+node_modules/
+dist/
+coverage/
+src/generated/
+*.tsbuildinfo
+
+# Secretos: solo se sube .env.example
+.env
+.env.*
+!.env.example
+
+# Configuración local del editor y de herramientas
+.claude/settings.local.json
+.vscode/
+*.log

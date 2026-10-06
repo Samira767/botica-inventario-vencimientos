@@ -1,0 +1,122 @@
+// Sistema de inventario y vencimientos para boticas
+// Modelo de datos (semana 1)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Rol {
+  DUENO
+  VENDEDOR
+}
+
+enum TipoMovimiento {
+  INGRESO // compra de mercadería (entra un lote)
+  VENTA // sale producto por una venta
+  AJUSTE // corrección de inventario (conteo físico)
+  BAJA_VENCIMIENTO // se retira un lote vencido
+}
+
+model Usuario {
+  id           Int          @id @default(autoincrement())
+  nombre       String
+  correo       String       @unique
+  passwordHash String       @map("password_hash")
+  rol          Rol          @default(VENDEDOR)
+  activo       Boolean      @default(true)
+  creadoEn     DateTime     @default(now()) @map("creado_en")
+  ventas       Venta[]
+  movimientos  Movimiento[]
+
+  @@map("usuarios")
+}
+
+model Producto {
+  id           Int            @id @default(autoincrement())
+  nombre       String // ej. "Paracetamol 500 mg"
+  laboratorio  String?
+  presentacion String? // ej. "Caja x 100 tabletas"
+  codigoBarras String?        @unique @map("codigo_barras")
+  precioVenta  Decimal        @map("precio_venta") @db.Decimal(10, 2)
+  stockMinimo  Int            @default(0) @map("stock_minimo")
+  activo       Boolean        @default(true)
+  creadoEn     DateTime       @default(now()) @map("creado_en")
+  lotes        Lote[]
+  detalles     DetalleVenta[]
+  movimientos  Movimiento[]
+
+  @@index([nombre])
+  @@map("productos")
+}
+
+model Lote {
+  id                Int            @id @default(autoincrement())
+  productoId        Int            @map("producto_id")
+  producto          Producto       @relation(fields: [productoId], references: [id])
+  numeroLote        String         @map("numero_lote")
+  fechaVencimiento  DateTime       @map("fecha_vencimiento") @db.Date
+  cantidadInicial   Int            @map("cantidad_inicial")
+  cantidadActual    Int            @map("cantidad_actual")
+  costoUnitario     Decimal        @map("costo_unitario") @db.Decimal(10, 2)
+  fechaIngreso      DateTime       @default(now()) @map("fecha_ingreso")
+  detalles          DetalleVenta[]
+  movimientos       Movimiento[]
+
+  @@unique([productoId, numeroLote])
+  // FEFO: buscar rápido los lotes de un producto ordenados por vencimiento
+  @@index([productoId, fechaVencimiento])
+  // Panel: "¿qué vence en los próximos N días?"
+  @@index([fechaVencimiento])
+  @@map("lotes")
+}
+
+model Venta {
+  id        Int            @id @default(autoincrement())
+  fecha     DateTime       @default(now())
+  usuarioId Int            @map("usuario_id")
+  usuario   Usuario        @relation(fields: [usuarioId], references: [id])
+  total     Decimal        @db.Decimal(10, 2)
+  detalles  DetalleVenta[]
+
+  @@index([fecha])
+  @@map("ventas")
+}
+
+// Una línea por cada lote usado: si una venta de 10 unidades
+// sale de 2 lotes (FEFO), se guardan 2 detalles.
+model DetalleVenta {
+  id             Int      @id @default(autoincrement())
+  ventaId        Int      @map("venta_id")
+  venta          Venta    @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  productoId     Int      @map("producto_id")
+  producto       Producto @relation(fields: [productoId], references: [id])
+  loteId         Int      @map("lote_id")
+  lote           Lote     @relation(fields: [loteId], references: [id])
+  cantidad       Int
+  precioUnitario Decimal  @map("precio_unitario") @db.Decimal(10, 2)
+
+  @@map("detalle_venta")
+}
+
+// Historial de todo lo que cambia el stock (trazabilidad)
+model Movimiento {
+  id         Int            @id @default(autoincrement())
+  tipo       TipoMovimiento
+  productoId Int            @map("producto_id")
+  producto   Producto       @relation(fields: [productoId], references: [id])
+  loteId     Int            @map("lote_id")
+  lote       Lote           @relation(fields: [loteId], references: [id])
+  cantidad   Int // positivo entra, negativo sale
+  usuarioId  Int            @map("usuario_id")
+  usuario    Usuario        @relation(fields: [usuarioId], references: [id])
+  motivo     String?
+  fecha      DateTime       @default(now())
+
+  @@index([productoId, fecha])
+  @@map("movimientos")
+}
