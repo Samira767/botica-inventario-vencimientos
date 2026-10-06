@@ -70,6 +70,7 @@ Todas las rutas llevan el prefijo `/api` y, salvo el login, piden el encabezado 
 | `POST /ventas` | Cualquier rol | Registra una venta `{ "items": [{ "productoId": 1, "cantidad": 3 }] }` descontando stock con FEFO |
 | `GET /ventas` | Cualquier rol | Últimas 50 ventas |
 | `GET /ventas/:id` | Cualquier rol | Venta con el detalle de cada lote usado |
+| `GET /panel` | DUENO | Vencimientos (vencidos, 30, 60 y 90 días), dinero en riesgo y productos con stock bajo |
 
 ## Ventas con FEFO
 
@@ -81,6 +82,14 @@ FEFO (*first expired, first out*): sale primero lo que vence primero. Al registr
 4. Como última barrera, la base tiene `CHECK (cantidad_actual >= 0)`.
 
 Las pruebas cubren: venta que usa varios lotes, stock insuficiente, lotes vencidos que no se venden y ventas simultáneas ([test/ventas.e2e-spec.ts](test/ventas.e2e-spec.ts)).
+
+## Panel
+
+`GET /panel` devuelve en una sola llamada lo que el dueño necesita ver al abrir el sistema:
+
+- **Vencimientos** por tramo (`VENCIDO`, `DIAS_30`, `DIAS_60`, `DIAS_90`), con número de lotes, unidades y valor.
+- **Dinero en riesgo**: soles, al costo, en lotes con stock que vencen en los próximos 90 días. Lo ya vencido se informa aparte (`dineroVencido`).
+- **Stock bajo**: productos cuyo stock vendible está por debajo de su mínimo. El stock vencido no cuenta.
 
 ## Comandos
 
