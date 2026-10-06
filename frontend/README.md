@@ -11,6 +11,16 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
+### Abrirla desde el celular
+
+Con el celular y la computadora en la misma red Wi-Fi:
+
+```bash
+npm run dev:celular
+```
+
+Vite muestra una dirección `Network`, por ejemplo `https://192.168.1.106:5173`. Ábrela en el celular y acepta la advertencia de seguridad: el certificado es local y autofirmado. Va con `https` porque los navegadores solo prestan la cámara en páginas seguras.
+
 En desarrollo no hay que configurar nada: Vite reenvía las llamadas a `/api` hacia el backend ([vite.config.ts](vite.config.ts)). En producción se define `VITE_API_URL` con la URL pública del backend (ver [.env.example](.env.example)).
 
 ## Pantallas
@@ -34,7 +44,7 @@ En desarrollo no hay que configurar nada: Vite reenvía las llamadas a `/api` ha
 
 ## Notas
 
-- **Escáner de códigos**: usa la cámara con `html5-qrcode`. Los navegadores solo prestan la cámara en `https` o en `localhost`, así que desde un celular funciona con la app desplegada, no entrando por la IP de la computadora. Siempre se puede escribir el código a mano.
+- **Escáner de códigos**: usa la cámara con `barcode-detector`, que lee con ZXing compilado a WebAssembly y analiza cada cuadro a la resolución real de la cámara. Se empezó con `html5-qrcode`, pero esa librería analiza la imagen al tamaño en que se muestra en pantalla y no lograba leer códigos de barras a distancia normal. El código debe ocupar al menos una sexta parte del ancho de la imagen y verse nítido; siempre se puede escribir a mano.
 - **Permisos**: ocultar un botón o una ruta según el rol es solo comodidad. Quien decide es el backend, que responde 403.
 - **Sesión**: el token se guarda en `localStorage`; si vence o es rechazado, la app vuelve sola al login.
 
@@ -43,5 +53,6 @@ En desarrollo no hay que configurar nada: Vite reenvía las llamadas a `/api` ha
 | Comando | Para qué |
 | --- | --- |
 | `npm run dev` | Servidor de desarrollo con recarga al guardar |
+| `npm run dev:celular` | Igual, pero visible en la red Wi-Fi y con https, para probar desde el celular |
 | `npm run build` | Revisa tipos y genera `dist/` para publicar |
 | `npm run lint` | Revisa el código con oxlint |

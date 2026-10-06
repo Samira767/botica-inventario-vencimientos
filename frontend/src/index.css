@@ -433,13 +433,30 @@ form > .boton {
   margin: 0.75rem 0;
 }
 
-.escaner-video {
+.escaner-marco {
+  position: relative;
   width: 100%;
-  max-width: 26rem;
+  max-width: 34rem;
+  min-height: 8rem;
   margin: 0 auto;
   overflow: hidden;
   border-radius: 0.5rem;
   background: #000;
+}
+
+.escaner-marco video {
+  display: block;
+  width: 100%;
+}
+
+/* Línea guía, como la de un lector de supermercado */
+.escaner-marco::after {
+  content: "";
+  position: absolute;
+  inset: 50% 8% auto 8%;
+  height: 2px;
+  background: #ff4d4d;
+  box-shadow: 0 0 6px #ff4d4d;
 }
 
 /* --- Panel --- */
