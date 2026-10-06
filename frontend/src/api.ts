@@ -53,6 +53,12 @@ export async function api<T>(
 
   if (respuesta.ok) return (await respuesta.json()) as T
 
+  // 502, 503 y 504 no vienen del backend sino de lo que está delante (el proxy de Vite o el
+  // hosting): significan que el backend está apagado o no responde.
+  if ([502, 503, 504].includes(respuesta.status)) {
+    throw new ErrorApi(respuesta.status, 'El servidor no está disponible en este momento. Inténtalo de nuevo en un rato.')
+  }
+
   const cuerpo = await respuesta.json().catch(() => null)
   const mensaje: unknown = cuerpo?.message
   const texto = Array.isArray(mensaje) ? mensaje.join('. ') : typeof mensaje === 'string' ? mensaje : 'Ocurrió un error inesperado'
