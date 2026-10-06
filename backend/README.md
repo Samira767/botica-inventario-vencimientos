@@ -55,6 +55,20 @@ Todas las rutas llevan el prefijo `/api` y, salvo el login, piden el encabezado 
 | `DELETE /productos/:id` | DUENO | Desactiva (no borra, para conservar el historial) |
 | `GET /lotes?productoId=` | Cualquier rol | Lotes ordenados por vencimiento |
 | `POST /lotes` | Cualquier rol | Ingresa un lote y registra el movimiento `INGRESO` |
+| `POST /ventas` | Cualquier rol | Registra una venta `{ "items": [{ "productoId": 1, "cantidad": 3 }] }` descontando stock con FEFO |
+| `GET /ventas` | Cualquier rol | Últimas 50 ventas |
+| `GET /ventas/:id` | Cualquier rol | Venta con el detalle de cada lote usado |
+
+## Ventas con FEFO
+
+FEFO (*first expired, first out*): sale primero lo que vence primero. Al registrar una venta:
+
+1. Todo ocurre en **una transacción**: si un producto no tiene stock suficiente, no se descuenta ni se guarda nada (respuesta `409`).
+2. Los lotes vendibles del producto (no vencidos y con stock) se leen ordenados por vencimiento con `SELECT ... FOR UPDATE`. Ese bloqueo hace que dos ventas simultáneas del mismo producto se atiendan una después de la otra, y la segunda ve el stock ya descontado.
+3. La cantidad se reparte lote por lote ([src/ventas/fefo.ts](src/ventas/fefo.ts)); se guarda una línea de `detalle_venta` y un movimiento `VENTA` por cada lote usado.
+4. Como última barrera, la base tiene `CHECK (cantidad_actual >= 0)`.
+
+Las pruebas cubren: venta que usa varios lotes, stock insuficiente, lotes vencidos que no se venden y ventas simultáneas ([test/ventas.e2e-spec.ts](test/ventas.e2e-spec.ts)).
 
 ## Comandos
 
