@@ -1,5 +1,6 @@
-// Sistema de inventario y vencimientos para boticas
-// Modelo de datos (semana 1)
+// Sistema de inventario y vencimientos para boticas y veterinarias
+// Varios negocios comparten la misma base: cada fila lleva su negocio_id
+// y la API filtra siempre por el negocio del usuario que inició sesión.
 
 generator client {
   provider = "prisma-client"
@@ -15,6 +16,11 @@ enum Rol {
   VENDEDOR
 }
 
+enum TipoNegocio {
+  BOTICA
+  VETERINARIA
+}
+
 enum TipoMovimiento {
   INGRESO // compra de mercadería (entra un lote)
   VENTA // sale producto por una venta
@@ -22,9 +28,28 @@ enum TipoMovimiento {
   BAJA_VENCIMIENTO // se retira un lote vencido
 }
 
+// Cada botica o veterinaria que usa el sistema
+model Negocio {
+  id          Int          @id @default(autoincrement())
+  nombre      String
+  tipo        TipoNegocio  @default(BOTICA)
+  activo      Boolean      @default(true)
+  creadoEn    DateTime     @default(now()) @map("creado_en")
+  usuarios    Usuario[]
+  productos   Producto[]
+  lotes       Lote[]
+  ventas      Venta[]
+  movimientos Movimiento[]
+
+  @@map("negocios")
+}
+
 model Usuario {
   id           Int          @id @default(autoincrement())
+  negocioId    Int          @map("negocio_id")
+  negocio      Negocio      @relation(fields: [negocioId], references: [id])
   nombre       String
+  // Único en todo el sistema: con el correo se sabe a qué negocio entra la persona
   correo       String       @unique
   passwordHash String       @map("password_hash")
   rol          Rol          @default(VENDEDOR)
@@ -33,15 +58,18 @@ model Usuario {
   ventas       Venta[]
   movimientos  Movimiento[]
 
+  @@index([negocioId])
   @@map("usuarios")
 }
 
 model Producto {
   id           Int            @id @default(autoincrement())
+  negocioId    Int            @map("negocio_id")
+  negocio      Negocio        @relation(fields: [negocioId], references: [id])
   nombre       String // ej. "Paracetamol 500 mg"
   laboratorio  String?
   presentacion String? // ej. "Caja x 100 tabletas"
-  codigoBarras String?        @unique @map("codigo_barras")
+  codigoBarras String?        @map("codigo_barras")
   precioVenta  Decimal        @map("precio_venta") @db.Decimal(10, 2)
   stockMinimo  Int            @default(0) @map("stock_minimo")
   activo       Boolean        @default(true)
@@ -50,12 +78,16 @@ model Producto {
   detalles     DetalleVenta[]
   movimientos  Movimiento[]
 
-  @@index([nombre])
+  // Único por negocio: dos boticas venden el mismo producto con el mismo código
+  @@unique([negocioId, codigoBarras])
+  @@index([negocioId, nombre])
   @@map("productos")
 }
 
 model Lote {
   id                Int            @id @default(autoincrement())
+  negocioId         Int            @map("negocio_id")
+  negocio           Negocio        @relation(fields: [negocioId], references: [id])
   productoId        Int            @map("producto_id")
   producto          Producto       @relation(fields: [productoId], references: [id])
   numeroLote        String         @map("numero_lote")
@@ -71,25 +103,28 @@ model Lote {
   @@unique([productoId, numeroLote])
   // FEFO: buscar rápido los lotes de un producto ordenados por vencimiento
   @@index([productoId, fechaVencimiento])
-  // Panel: "¿qué vence en los próximos N días?"
-  @@index([fechaVencimiento])
+  // Panel: "¿qué vence en los próximos N días en mi negocio?"
+  @@index([negocioId, fechaVencimiento])
   @@map("lotes")
 }
 
 model Venta {
   id        Int            @id @default(autoincrement())
+  negocioId Int            @map("negocio_id")
+  negocio   Negocio        @relation(fields: [negocioId], references: [id])
   fecha     DateTime       @default(now())
   usuarioId Int            @map("usuario_id")
   usuario   Usuario        @relation(fields: [usuarioId], references: [id])
   total     Decimal        @db.Decimal(10, 2)
   detalles  DetalleVenta[]
 
-  @@index([fecha])
+  @@index([negocioId, fecha])
   @@map("ventas")
 }
 
 // Una línea por cada lote usado: si una venta de 10 unidades
 // sale de 2 lotes (FEFO), se guardan 2 detalles.
+// No lleva negocio_id: siempre se llega a ella a través de su venta.
 model DetalleVenta {
   id             Int      @id @default(autoincrement())
   ventaId        Int      @map("venta_id")
@@ -101,12 +136,15 @@ model DetalleVenta {
   cantidad       Int
   precioUnitario Decimal  @map("precio_unitario") @db.Decimal(10, 2)
 
+  @@index([ventaId])
   @@map("detalle_venta")
 }
 
 // Historial de todo lo que cambia el stock (trazabilidad)
 model Movimiento {
   id         Int            @id @default(autoincrement())
+  negocioId  Int            @map("negocio_id")
+  negocio    Negocio        @relation(fields: [negocioId], references: [id])
   tipo       TipoMovimiento
   productoId Int            @map("producto_id")
   producto   Producto       @relation(fields: [productoId], references: [id])
@@ -118,6 +156,7 @@ model Movimiento {
   motivo     String?
   fecha      DateTime       @default(now())
 
+  @@index([negocioId, fecha])
   @@index([productoId, fecha])
   @@map("movimientos")
 }

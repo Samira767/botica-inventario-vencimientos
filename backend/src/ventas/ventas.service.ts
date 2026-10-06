@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import type { UsuarioToken } from "../auth/decoradores";
 import { hoyEnLima } from "../common/fechas";
 import { Prisma } from "../generated/prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
@@ -25,21 +26,26 @@ const DETALLE_COMPLETO = {
 export class VentasService {
   constructor(private readonly prisma: PrismaService) {}
 
-  listar() {
+  listar(negocioId: number) {
     return this.prisma.venta.findMany({
+      where: { negocioId },
       orderBy: { fecha: "desc" },
       take: 50,
       include: { usuario: { select: { id: true, nombre: true } } },
     });
   }
 
-  async obtener(id: number) {
-    const venta = await this.prisma.venta.findUnique({ where: { id }, include: DETALLE_COMPLETO });
+  async obtener(negocioId: number, id: number) {
+    const venta = await this.prisma.venta.findFirst({
+      where: { id, negocioId },
+      include: DETALLE_COMPLETO,
+    });
     if (!venta) throw new NotFoundException("Venta no encontrada");
     return venta;
   }
 
-  async registrar(dto: RegistrarVentaDto, usuarioId: number) {
+  async registrar(dto: RegistrarVentaDto, usuario: UsuarioToken) {
+    const { negocioId, id: usuarioId } = usuario;
     // Si el mismo producto viene dos veces, se suma en una sola línea
     const pedido = new Map<number, number>();
     for (const item of dto.items) {
@@ -52,7 +58,10 @@ export class VentasService {
 
     // Todo o nada: si falla cualquier producto, no se descuenta ni se guarda nada
     const ventaId = await this.prisma.$transaction(async (tx) => {
-      const productos = await tx.producto.findMany({ where: { id: { in: productoIds } } });
+      // Solo productos del negocio del usuario: uno ajeno cuenta como inexistente
+      const productos = await tx.producto.findMany({
+        where: { id: { in: productoIds }, negocioId },
+      });
       const porId = new Map(productos.map((p) => [p.id, p]));
 
       const lineas: {
@@ -76,6 +85,7 @@ export class VentasService {
           SELECT id, cantidad_actual AS "cantidadActual"
           FROM lotes
           WHERE producto_id = ${productoId}
+            AND negocio_id = ${negocioId}
             AND fecha_vencimiento >= ${hoy}::date
             AND cantidad_actual > 0
           ORDER BY fecha_vencimiento ASC, id ASC
@@ -111,11 +121,12 @@ export class VentasService {
         new Prisma.Decimal(0),
       );
       const venta = await tx.venta.create({
-        data: { usuarioId, total, detalles: { create: lineas } },
+        data: { negocioId, usuarioId, total, detalles: { create: lineas } },
       });
 
       await tx.movimiento.createMany({
         data: lineas.map((l) => ({
+          negocioId,
           tipo: "VENTA" as const,
           productoId: l.productoId,
           loteId: l.loteId,
@@ -127,6 +138,6 @@ export class VentasService {
       return venta.id;
     });
 
-    return this.obtener(ventaId);
+    return this.obtener(negocioId, ventaId);
   }
 }

@@ -25,8 +25,16 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwt.verifyAsync<{ sub: number; nombre: string; rol: UsuarioToken["rol"] }>(token);
-      const usuario: UsuarioToken = { id: payload.sub, nombre: payload.nombre, rol: payload.rol };
+      const payload = await this.jwt.verifyAsync<
+        { sub: number } & Pick<UsuarioToken, "negocioId" | "nombre" | "rol">
+      >(token);
+      // El negocio sale del token firmado, nunca de un dato que envíe el cliente
+      const usuario: UsuarioToken = {
+        id: payload.sub,
+        negocioId: payload.negocioId,
+        nombre: payload.nombre,
+        rol: payload.rol,
+      };
       request.usuario = usuario;
     } catch {
       throw new UnauthorizedException("Token inválido o vencido");

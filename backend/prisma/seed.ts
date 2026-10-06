@@ -1,4 +1,5 @@
-// Datos de prueba para la demo: usuarios, ~50 productos y sus lotes.
+// Datos de prueba para la demo: dos negocios (una botica y una veterinaria),
+// cada uno con sus usuarios, productos y lotes.
 // Las fechas de vencimiento se calculan desde HOY, así la demo siempre
 // muestra productos vencidos, por vencer y en buen estado.
 // Ejecutar con: npx prisma db seed
@@ -29,7 +30,9 @@ const prisma = new PrismaClient({
 });
 
 // [nombre, laboratorio, presentación, precio de venta (S/), stock mínimo]
-const productos: [string, string, string, number, number][] = [
+type Fila = [string, string, string, number, number];
+
+const productos: Fila[] = [
   ["Paracetamol 500 mg", "Genfar", "Caja x 100 tabletas", 0.2, 200],
   ["Paracetamol 120 mg/5 ml jarabe", "Portugal", "Frasco 60 ml", 4.5, 10],
   ["Ibuprofeno 400 mg", "Genfar", "Caja x 100 tabletas", 0.3, 150],
@@ -82,6 +85,19 @@ const productos: [string, string, string, number, number][] = [
   ["Preservativos", "Durex", "Caja x 3", 8.0, 10],
 ];
 
+const ALCOHOL = "Alcohol medicinal 70°";
+
+const productosVeterinaria: Fila[] = [
+  ["Ivermectina 1% inyectable", "Agrovet Market", "Frasco 50 ml", 35.0, 5],
+  ["Antipulgas pipeta perro 10-20 kg", "Bayer", "Pipeta", 28.0, 10],
+  ["Amoxicilina veterinaria 250 mg", "Montana", "Caja x 10 tabletas", 12.0, 10],
+  ["Vacuna antirrábica", "Zoetis", "Dosis", 25.0, 10],
+  ["Shampoo medicado con clorhexidina", "Labyes", "Frasco 250 ml", 32.0, 5],
+  ["Meloxicam 2 mg veterinario", "Montana", "Caja x 10 tabletas", 15.0, 10],
+  [ALCOHOL, "Alkofarma", "Frasco 250 ml", 5.0, 10],
+  ["Suplemento vitamínico para gatos", "Biomont", "Frasco 120 ml", 22.0, 5],
+];
+
 // Días hasta el vencimiento para el primer lote de cada producto.
 // Se reparten para que el panel tenga de todo:
 // vencidos (<0), críticos (0-30), por vencer (31-90) y en buen estado.
@@ -102,40 +118,22 @@ function enDias(dias: number): Date {
   return d;
 }
 
-async function main() {
-  // Limpiar en orden (por las relaciones) para poder ejecutar el seed varias veces
-  await prisma.movimiento.deleteMany();
-  await prisma.detalleVenta.deleteMany();
-  await prisma.venta.deleteMany();
-  await prisma.lote.deleteMany();
-  await prisma.producto.deleteMany();
-  await prisma.usuario.deleteMany();
-
-  const dueno = await prisma.usuario.create({
-    data: {
-      nombre: "Dueña Demo",
-      correo: "dueno@demo.pe",
-      passwordHash: await bcrypt.hash("Demo1234", 10),
-      rol: "DUENO",
-    },
-  });
-  await prisma.usuario.create({
-    data: {
-      nombre: "Vendedor Demo",
-      correo: "vendedor@demo.pe",
-      passwordHash: await bcrypt.hash("Demo1234", 10),
-      rol: "VENDEDOR",
-    },
-  });
-
+// Carga un catálogo con sus lotes para un negocio. Devuelve cuántos lotes creó.
+async function cargarCatalogo(
+  negocioId: number,
+  usuarioId: number,
+  filas: Fila[],
+  codigoBarras: (i: number) => string,
+): Promise<number> {
   let totalLotes = 0;
-  for (const [i, [nombre, laboratorio, presentacion, precio, stockMinimo]] of productos.entries()) {
+  for (const [i, [nombre, laboratorio, presentacion, precio, stockMinimo]] of filas.entries()) {
     const producto = await prisma.producto.create({
       data: {
+        negocioId,
         nombre,
         laboratorio,
         presentacion,
-        codigoBarras: ean13(i + 1),
+        codigoBarras: codigoBarras(i),
         precioVenta: precio,
         stockMinimo,
       },
@@ -149,6 +147,7 @@ async function main() {
       const cantidad = i % 7 === 0 ? Math.ceil(stockMinimo / 4) : stockMinimo + 20 * (l + 1);
       const lote = await prisma.lote.create({
         data: {
+          negocioId,
           productoId: producto.id,
           numeroLote: `L${String(i + 1).padStart(3, "0")}-${l + 1}`,
           fechaVencimiento: enDias(dias),
@@ -159,20 +158,77 @@ async function main() {
       });
       await prisma.movimiento.create({
         data: {
+          negocioId,
           tipo: "INGRESO",
           productoId: producto.id,
           loteId: lote.id,
           cantidad,
-          usuarioId: dueno.id,
+          usuarioId,
           motivo: "Carga inicial (datos de prueba)",
         },
       });
       totalLotes++;
     }
   }
+  return totalLotes;
+}
 
-  console.log(`Listo: 2 usuarios, ${productos.length} productos, ${totalLotes} lotes.`);
-  console.log("Usuarios demo: dueno@demo.pe / vendedor@demo.pe (contraseña Demo1234)");
+async function main() {
+  // Limpiar en orden (por las relaciones) para poder ejecutar el seed varias veces
+  await prisma.movimiento.deleteMany();
+  await prisma.detalleVenta.deleteMany();
+  await prisma.venta.deleteMany();
+  await prisma.lote.deleteMany();
+  await prisma.producto.deleteMany();
+  await prisma.usuario.deleteMany();
+  await prisma.negocio.deleteMany();
+
+  const passwordHash = await bcrypt.hash("Demo1234", 10);
+
+  // Negocio 1: botica con dueña y vendedor
+  const botica = await prisma.negocio.create({ data: { nombre: "Botica Demo", tipo: "BOTICA" } });
+  const dueno = await prisma.usuario.create({
+    data: {
+      negocioId: botica.id,
+      nombre: "Dueña Demo",
+      correo: "dueno@demo.pe",
+      passwordHash,
+      rol: "DUENO",
+    },
+  });
+  await prisma.usuario.create({
+    data: {
+      negocioId: botica.id,
+      nombre: "Vendedor Demo",
+      correo: "vendedor@demo.pe",
+      passwordHash,
+      rol: "VENDEDOR",
+    },
+  });
+  const lotesBotica = await cargarCatalogo(botica.id, dueno.id, productos, (i) => ean13(i + 1));
+
+  // Negocio 2: veterinaria, para demostrar que cada negocio solo ve lo suyo
+  const veterinaria = await prisma.negocio.create({
+    data: { nombre: "Veterinaria Demo", tipo: "VETERINARIA" },
+  });
+  const duenoVet = await prisma.usuario.create({
+    data: {
+      negocioId: veterinaria.id,
+      nombre: "Dueño Veterinaria Demo",
+      correo: "veterinaria@demo.pe",
+      passwordHash,
+      rol: "DUENO",
+    },
+  });
+  // El alcohol lleva el mismo código de barras que en la botica: es el mismo producto físico
+  const iAlcohol = productos.findIndex(([nombre]) => nombre === ALCOHOL);
+  const lotesVet = await cargarCatalogo(veterinaria.id, duenoVet.id, productosVeterinaria, (i) =>
+    productosVeterinaria[i][0] === ALCOHOL ? ean13(iAlcohol + 1) : ean13(1001 + i),
+  );
+
+  console.log(`Botica Demo: 2 usuarios, ${productos.length} productos, ${lotesBotica} lotes.`);
+  console.log(`Veterinaria Demo: 1 usuario, ${productosVeterinaria.length} productos, ${lotesVet} lotes.`);
+  console.log("Usuarios demo (contraseña Demo1234): dueno@demo.pe, vendedor@demo.pe, veterinaria@demo.pe");
 }
 
 main()

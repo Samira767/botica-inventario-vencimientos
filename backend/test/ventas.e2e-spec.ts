@@ -11,6 +11,7 @@ describe("Ventas con FEFO (e2e)", () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let token: string;
+  let negocioId: number;
 
   function enDias(dias: number): Date {
     const d = hoyEnLima();
@@ -22,12 +23,13 @@ describe("Ventas con FEFO (e2e)", () => {
   // (con razón) no deja ingresar lotes ya vencidos.
   async function crearProducto(precio: number, lotes: { venceEnDias: number; cantidad: number }[]) {
     const producto = await prisma.producto.create({
-      data: { nombre: `Prueba FEFO ${Date.now()}-${Math.random()}`, precioVenta: precio },
+      data: { negocioId, nombre: `Prueba FEFO ${Date.now()}-${Math.random()}`, precioVenta: precio },
     });
     const ids: number[] = [];
     for (const [i, l] of lotes.entries()) {
       const lote = await prisma.lote.create({
         data: {
+          negocioId,
           productoId: producto.id,
           numeroLote: `T-${i + 1}`,
           fechaVencimiento: enDias(l.venceEnDias),
@@ -71,6 +73,7 @@ describe("Ventas con FEFO (e2e)", () => {
       .post("/auth/login")
       .send({ correo: "vendedor@demo.pe", password: "Demo1234" });
     token = res.body.accessToken;
+    negocioId = res.body.negocio.id;
   });
 
   afterAll(async () => {

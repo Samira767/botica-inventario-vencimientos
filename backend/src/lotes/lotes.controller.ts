@@ -10,12 +10,15 @@ export class LotesController {
   constructor(private readonly lotes: LotesService) {}
 
   @Get()
-  listar(@Query("productoId", new ParseIntPipe({ optional: true })) productoId?: number) {
-    return this.lotes.listar(productoId);
+  listar(
+    @UsuarioActual() usuario: UsuarioToken,
+    @Query("productoId", new ParseIntPipe({ optional: true })) productoId?: number,
+  ) {
+    return this.lotes.listar(usuario.negocioId, productoId);
   }
 
   @Post()
   ingresar(@Body() dto: IngresarLoteDto, @UsuarioActual() usuario: UsuarioToken) {
-    return this.lotes.ingresar(dto, usuario.id);
+    return this.lotes.ingresar(dto, usuario);
   }
 }

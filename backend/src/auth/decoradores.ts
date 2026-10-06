@@ -4,6 +4,8 @@ import type { Rol } from "../generated/prisma/enums";
 // Lo que viaja dentro del token y queda disponible en cada petición
 export interface UsuarioToken {
   id: number;
+  // Negocio al que pertenece: todas las consultas se filtran por este valor
+  negocioId: number;
   nombre: string;
   rol: Rol;
 }

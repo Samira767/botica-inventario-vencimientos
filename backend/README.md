@@ -1,12 +1,13 @@
 # Botica – Backend
 
-API del sistema de inventario y vencimientos para boticas. NestJS + Prisma 7 + PostgreSQL 16.
+API del sistema de inventario y vencimientos para boticas y veterinarias. NestJS + Prisma 7 + PostgreSQL 16.
 
 ## Modelo de datos
 
 | Tabla | Qué guarda |
 | --- | --- |
-| `usuarios` | Personas que usan el sistema, con rol `DUENO` o `VENDEDOR` |
+| `negocios` | Cada botica o veterinaria que usa el sistema |
+| `usuarios` | Personas que usan el sistema, con rol `DUENO` o `VENDEDOR`; cada una pertenece a un negocio |
 | `productos` | Catálogo: nombre, laboratorio, presentación, código de barras, precio y stock mínimo |
 | `lotes` | Cada ingreso de mercadería: número de lote, fecha de vencimiento, cantidad y costo |
 | `ventas` | Cabecera de cada venta: fecha, usuario y total |
@@ -14,6 +15,12 @@ API del sistema de inventario y vencimientos para boticas. NestJS + Prisma 7 + P
 | `movimientos` | Historial de todo lo que cambia el stock: ingresos, ventas, ajustes y bajas por vencimiento |
 
 El stock de un producto no se guarda en `productos`: es la suma de `cantidad_actual` de sus lotes no vencidos. Así nunca hay dos números que se contradigan.
+
+## Varios negocios en una misma base
+
+Cada botica o veterinaria es una fila de `negocios`, y usuarios, productos, lotes, ventas y movimientos llevan su `negocio_id`. Al iniciar sesión, el `negocioId` del usuario queda dentro del token JWT firmado, y todas las consultas filtran por él: el cliente nunca puede elegir el negocio. Un dato de otro negocio responde `404`, igual que si no existiera.
+
+El código de barras es único por negocio (no en toda la base), porque dos boticas venden el mismo producto. Las pruebas de [test/aislamiento.e2e-spec.ts](test/aislamiento.e2e-spec.ts) verifican que un negocio no puede ver, editar ni vender lo de otro.
 
 ## Requisitos
 
@@ -28,24 +35,29 @@ cp .env.example .env                   # y cambia JWT_SECRET
 npm run db:up                          # levanta PostgreSQL en Docker (puerto 5433)
 npm run db:generate                    # genera el cliente de Prisma en src/generated
 npm run db:migrate                     # crea las tablas
-npm run db:seed                        # carga 50 productos y sus lotes
+npm run db:seed                        # carga dos negocios demo con sus productos y lotes
 npm run start:dev                      # API en http://localhost:3001/api
 ```
 
 Usuarios de prueba (contraseña `Demo1234`):
 
-- `dueno@demo.pe` (rol dueño)
-- `vendedor@demo.pe` (rol vendedor)
+- `dueno@demo.pe`: dueña de Botica Demo (50 productos)
+- `vendedor@demo.pe`: vendedor de Botica Demo
+- `veterinaria@demo.pe`: dueño de Veterinaria Demo (8 productos)
 
 Los datos de prueba calculan los vencimientos desde el día en que ejecutas el seed, así que la demo siempre tiene productos vencidos, por vencer y en buen estado. Los códigos de barras son ficticios.
 
+## Ver la base con DBeaver
+
+Nueva conexión PostgreSQL con: host `localhost`, puerto `5433`, base `botica`, usuario `botica`, contraseña `botica`. Úsalo para consultar; los cambios de estructura se hacen con migraciones de Prisma (`npm run db:migrate`), no a mano, para que el historial de migraciones no se desincronice.
+
 ## Endpoints
 
-Todas las rutas llevan el prefijo `/api` y, salvo el login, piden el encabezado `Authorization: Bearer <token>`.
+Todas las rutas llevan el prefijo `/api` y, salvo el login, piden el encabezado `Authorization: Bearer <token>`. Cada una trabaja solo con los datos del negocio del usuario.
 
 | Método y ruta | Quién | Qué hace |
 | --- | --- | --- |
-| `POST /auth/login` | Público | Devuelve `accessToken` y los datos del usuario |
+| `POST /auth/login` | Público | Devuelve `accessToken`, los datos del usuario y su negocio |
 | `GET /auth/me` | Cualquier rol | Usuario del token |
 | `GET /productos?buscar=&incluirInactivos=` | Cualquier rol | Lista con `stock` y `stockBajo` calculados |
 | `GET /productos/:id` | Cualquier rol | Producto con sus lotes |

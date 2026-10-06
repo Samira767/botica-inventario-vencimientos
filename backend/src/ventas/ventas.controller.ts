@@ -10,17 +10,17 @@ export class VentasController {
   constructor(private readonly ventas: VentasService) {}
 
   @Get()
-  listar() {
-    return this.ventas.listar();
+  listar(@UsuarioActual() usuario: UsuarioToken) {
+    return this.ventas.listar(usuario.negocioId);
   }
 
   @Get(":id")
-  obtener(@Param("id", ParseIntPipe) id: number) {
-    return this.ventas.obtener(id);
+  obtener(@UsuarioActual() usuario: UsuarioToken, @Param("id", ParseIntPipe) id: number) {
+    return this.ventas.obtener(usuario.negocioId, id);
   }
 
   @Post()
   registrar(@Body() dto: RegistrarVentaDto, @UsuarioActual() usuario: UsuarioToken) {
-    return this.ventas.registrar(dto, usuario.id);
+    return this.ventas.registrar(dto, usuario);
   }
 }
