@@ -1,5 +1,5 @@
-// Pruebas de extremo a extremo: levantan la app completa contra la base local con el seed cargado.
-// Solo leen datos o provocan rechazos, así que no ensucian la base.
+// Pruebas de extremo a extremo: levantan la app completa contra la base botica_test,
+// que global-setup.ts deja migrada y con el seed cargado.
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";

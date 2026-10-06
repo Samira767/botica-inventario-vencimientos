@@ -62,7 +62,7 @@ Todas las rutas llevan el prefijo `/api` y, salvo el login, piden el encabezado 
 | --- | --- |
 | `npm run start:dev` | Levanta la API y la reinicia al guardar cambios |
 | `npm test` | Pruebas unitarias |
-| `npm run test:e2e` | Pruebas de extremo a extremo (necesitan la base con el seed) |
+| `npm run test:e2e` | Pruebas de extremo a extremo. Usan su propia base `botica_test`, que se crea, migra y carga sola; no tocan la de desarrollo |
 | `npm run db:up` | Levanta PostgreSQL en Docker |
 | `npm run db:migrate` | Crea o actualiza las tablas después de cambiar `schema.prisma` |
 | `npm run db:generate` | Regenera el cliente de Prisma |
