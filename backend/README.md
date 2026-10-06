@@ -25,7 +25,7 @@ El stock de un producto no se guarda en `productos`: es la suma de `cantidad_act
 ```bash
 npm install
 cp .env.example .env                   # y cambia JWT_SECRET
-npm run db:up                          # levanta PostgreSQL en Docker (puerto 5432)
+npm run db:up                          # levanta PostgreSQL en Docker (puerto 5433)
 npm run db:generate                    # genera el cliente de Prisma en src/generated
 npm run db:migrate                     # crea las tablas
 npm run db:seed                        # carga 50 productos y sus lotes
