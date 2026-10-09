@@ -1,0 +1,95 @@
+# Integración continua: en cada push a main y en cada pull request se revisa que
+# el backend compile y pase sus pruebas contra PostgreSQL real, y que el frontend compile.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Si llega un push nuevo a la misma rama, se cancela la ejecución anterior
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (tipos, compilación y pruebas)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    # La misma base que en desarrollo (docker-compose.yml), pero levantada por GitHub
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: botica
+          POSTGRES_PASSWORD: botica
+          POSTGRES_DB: botica
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U botica -d botica"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://botica:botica@localhost:5432/botica
+      # Clave solo para las pruebas; la real vive en el hosting, nunca en el repositorio
+      JWT_SECRET: clave-solo-para-ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar el cliente de Prisma
+        run: npx prisma generate
+
+      - name: Revisar tipos
+        run: npm run typecheck
+
+      - name: Compilar
+        run: npm run build
+
+      - name: Pruebas unitarias
+        run: npm test
+
+      # Crean, migran y cargan la base botica_test antes de correr (test/global-setup.ts)
+      - name: Pruebas de extremo a extremo
+        run: npm run test:e2e
+
+  frontend:
+    name: Frontend (linter y compilación)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Linter
+        run: npm run lint
+
+      - name: Revisar tipos y compilar
+        run: npm run build
