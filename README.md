@@ -1,5 +1,7 @@
 # Control de inventario y vencimientos para boticas y veterinarias
 
+[![CI](https://github.com/Samira767/botica-inventario-vencimientos/actions/workflows/ci.yml/badge.svg)](https://github.com/Samira767/botica-inventario-vencimientos/actions/workflows/ci.yml)
+
 Sistema web para que un negocio pequeño sepa qué tiene en stock, qué está por vencer y cuánto dinero puede perder si no lo vende a tiempo. Pensado para boticas y veterinarias independientes de Huacho (Perú), y para usarse desde el celular en el mostrador.
 
 No es un sistema de caja ni emite comprobantes electrónicos: es un complemento de control de inventario.
@@ -72,6 +74,8 @@ cd backend
 npm test            # unitarias
 npm run test:e2e    # de extremo a extremo, en una base separada (botica_test)
 ```
+
+En cada push a `main`, [GitHub Actions](.github/workflows/ci.yml) corre todo esto contra un PostgreSQL 16 real, además del linter y la compilación del frontend.
 
 Cubren la validación de la importación, el reparto FEFO, stock insuficiente, lotes vencidos, ventas simultáneas, permisos por rol, aislamiento entre negocios y los cálculos del panel.
 
