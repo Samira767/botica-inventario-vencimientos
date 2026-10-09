@@ -6,6 +6,7 @@ import { LotesModule } from "./lotes/lotes.module";
 import { PanelModule } from "./panel/panel.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { ProductosModule } from "./productos/productos.module";
+import { ReportesModule } from "./reportes/reportes.module";
 import { VentasModule } from "./ventas/ventas.module";
 
 @Module({
@@ -18,6 +19,7 @@ import { VentasModule } from "./ventas/ventas.module";
     VentasModule,
     PanelModule,
     ImportacionModule,
+    ReportesModule,
   ],
 })
 export class AppModule {}
