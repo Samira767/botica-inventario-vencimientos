@@ -31,6 +31,7 @@ En desarrollo no hay que configurar nada: Vite reenvía las llamadas a `/api` ha
 | `/venta` | Todos | Arma la venta buscando o escaneando productos; al registrar muestra de qué lote entregar |
 | `/ingreso` | Todos | Registra un lote que llegó: número, vencimiento, cantidad y costo |
 | `/productos` | Todos (editar: dueño) | Catálogo con stock; el dueño crea, edita y desactiva |
+| `/reportes` | Dueño | Inventario valorizado, lotes por vencer y ventas por período, en Excel o PDF |
 | `/productos/importar` | Dueño | Importa el inventario desde Excel: plantilla, vista previa con errores por fila y confirmación |
 
 ## Estructura
@@ -38,6 +39,7 @@ En desarrollo no hay que configurar nada: Vite reenvía las llamadas a `/api` ha
 | Archivo | Contenido |
 | --- | --- |
 | [src/api.ts](src/api.ts) | Única función que habla con el backend: agrega el token y convierte los errores |
+| [src/archivos.ts](src/archivos.ts) | Arma los reportes en Excel (SheetJS) o PDF (jsPDF) en el navegador |
 | [src/excel.ts](src/excel.ts) | Lee el Excel en el navegador con SheetJS y genera la plantilla |
 | [src/sesion.tsx](src/sesion.tsx) | Quién inició sesión (contexto de React + `localStorage`) |
 | [src/App.tsx](src/App.tsx) | Rutas según el rol |

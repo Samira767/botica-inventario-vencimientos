@@ -5,6 +5,7 @@ import Ingreso from './paginas/Ingreso.tsx'
 import Login from './paginas/Login.tsx'
 import Panel from './paginas/Panel.tsx'
 import Productos from './paginas/Productos.tsx'
+import Reportes from './paginas/Reportes.tsx'
 import Venta from './paginas/Venta.tsx'
 import { useSesion } from './sesion.tsx'
 
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/ingreso" element={<Ingreso />} />
         <Route path="/productos" element={<Productos />} />
         {esDueno && <Route path="/productos/importar" element={<Importar />} />}
+        {esDueno && <Route path="/reportes" element={<Reportes />} />}
         <Route path="*" element={<Navigate to={inicio} replace />} />
       </Route>
     </Routes>

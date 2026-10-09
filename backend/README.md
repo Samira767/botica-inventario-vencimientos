@@ -72,6 +72,8 @@ Todas las rutas llevan el prefijo `/api` y, salvo el login, piden el encabezado 
 | `GET /ventas/:id` | Cualquier rol | Venta con el detalle de cada lote usado |
 | `POST /importacion/vista-previa` | DUENO | Valida las filas de un Excel de inventario y devuelve el estado de cada una, sin guardar |
 | `POST /importacion/confirmar` | DUENO | Vuelve a validar y guarda productos, lotes y movimientos en una transacción |
+| `GET /reportes/inventario?venceEnDias=` | DUENO | Lotes con stock valorizados al costo y a precio de venta; con `venceEnDias`, solo lo vencido o por vencer |
+| `GET /reportes/ventas?desde=&hasta=` | DUENO | Ventas de un período (días de Perú, hasta un año), con costo y ganancia por lote vendido |
 | `GET /panel` | DUENO | Vencimientos (vencidos, 30, 60 y 90 días), dinero en riesgo y productos con stock bajo |
 
 ## Ventas con FEFO
@@ -102,6 +104,13 @@ El navegador lee el archivo y envía las filas como JSON (una fila por lote, has
 - **Errores por fila**: una fila mala no rechaza el archivo; se omite y se informa con su número de fila.
 - **Reimportar no duplica**: un lote que ya existe se omite. Un producto se reconoce por su código de barras o, si no tiene, por nombre y presentación.
 - **Lotes vencidos**: se aceptan con un aviso, porque el inventario inicial puede incluir mercadería vencida sin retirar.
+
+## Reportes
+
+Los endpoints de reportes devuelven JSON; el navegador lo convierte en Excel o PDF. El servidor no genera archivos, y el mismo endpoint sirve para ambos formatos.
+
+- **Ventas por día de Perú**: un período del 01/10 al 09/10 va desde las 00:00 del 01/10 hasta las 23:59 del 09/10 en Lima (05:00 UTC). Una venta a las 23:30 cuenta en ese día aunque en UTC ya sea el siguiente.
+- **Ganancia con el costo real**: gracias a FEFO cada línea de venta sabe de qué lote salió, así que la ganancia usa el costo de ese lote y no un promedio.
 
 ## Comandos
 

@@ -15,6 +15,7 @@ No es un sistema de caja ni emite comprobantes electrónicos: es un complemento 
 - **Panel del dueño**: lotes vencidos y por vencer a 30, 60 y 90 días, productos con stock bajo y "dinero en riesgo" (soles, al costo, en lotes que vencen en los próximos 90 días).
 - **Ventas con FEFO** (*first expired, first out*): al vender, el sistema descuenta primero del lote que vence antes y le dice al vendedor de qué lote entregar.
 - **Ingreso de mercadería por lotes**, con número de lote, fecha de vencimiento, cantidad y costo.
+- **Reportes en Excel y PDF**: inventario valorizado, lotes por vencer y ventas por período con ganancia bruta.
 - **Importación desde Excel** del inventario inicial, con vista previa y aviso de errores fila por fila.
 - **Productos** con búsqueda y lectura de código de barras desde la cámara.
 - **Dos roles**: `DUENO` (ve todo y configura) y `VENDEDOR` (registra ingresos y ventas).
@@ -25,7 +26,7 @@ No es un sistema de caja ni emite comprobantes electrónicos: es un complemento 
 | Parte | Stack |
 | --- | --- |
 | [backend/](backend/) | NestJS, TypeScript, Prisma 7, PostgreSQL 16, JWT, Jest |
-| [frontend/](frontend/) | React 19, Vite, TypeScript, React Router, barcode-detector (ZXing en WebAssembly), SheetJS |
+| [frontend/](frontend/) | React 19, Vite, TypeScript, React Router, barcode-detector (ZXing en WebAssembly), SheetJS, jsPDF |
 
 ## Decisiones técnicas
 
@@ -81,6 +82,6 @@ Cubren la validación de la importación, el reparto FEFO, stock insuficiente, l
 
 ## Estado
 
-Hecho: autenticación y roles, productos, lotes, ventas FEFO, panel, multi-negocio, importación desde Excel y la aplicación web.
+Hecho: autenticación y roles, productos, lotes, ventas FEFO, panel, multi-negocio, importación desde Excel, reportes, la aplicación web e integración continua.
 
-Pendiente: reportes en Excel y PDF, y despliegue.
+Pendiente: despliegue (Render o Railway para el backend, Vercel para el frontend).

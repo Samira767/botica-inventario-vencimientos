@@ -26,6 +26,7 @@ export default function Marco() {
         <NavLink to="/venta">Venta</NavLink>
         <NavLink to="/ingreso">Ingreso</NavLink>
         <NavLink to="/productos">Productos</NavLink>
+        {esDueno && <NavLink to="/reportes">Reportes</NavLink>}
       </nav>
 
       <main className="contenido">
